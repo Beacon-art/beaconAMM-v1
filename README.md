@@ -67,7 +67,7 @@ Be careful of the [precedence in which env vars are read](https://github.com/dap
 We assume `ETH_FROM` is an address you own and is part of your keystore.
 If not, use `ethsign import` to import your private key.
 
-We use Infura as a remote node provider for the Mainnet & Rinkeby network deployments.
+We use Infura as a remote node provider for the Mainnet & Goerli network deployments.
 You must have set your API key as the `INFURA_API_KEY` enviroment variable in order to
 deploy to these networks
 
@@ -75,11 +75,15 @@ deploy to these networks
 
 ### Goerli
 
-"BeaconAmmV1PairEnumerableETH": "0x7DDaF116889D655D1c486bEB95017a8211265d29",
-"BeaconAmmV1PairMissingEnumerableETH": "0x17C83E2B96ACfb5190d63F5E46d93c107eC0b514",
-"BeaconAmmV1PairEnumerableERC20": "0x5008F837883EA9a07271a1b5eB0658404F5a9610",
-"BeaconAmmV1PairMissingEnumerableERC20": "0xfb91c019D9F12A0f9c23B4762fa64A34F8daDb4A",
-"BeaconAmmV1PairFactory": "0xA0B9915CE86a0082F5ee11478218B3fe71CdceCe",
-"BeaconAmmV1Router": "0xaC601526BD17742e04FF15d7D4EB89612626Ff6a",
-"ExponentialCurve": "0xC1B5D52b6459Dd02263F2C8469244a8a71D163F2",
-"LinearCurve": "0x531b20602B19ebeB77996aeBAdDD210B3c2916AC"
+{
+  "DEPLOYER": "0x1277057C301c120aeC09Cf1a47eEf59993fA6F56",
+  "BeaconAmmV1PairEnumerableETH": "0x6f08339AEFA011872E32D89Ab03B67EEB9ee20A0",
+  "BeaconAmmV1PairMissingEnumerableETH": "0xDcEb908CA98483bCa04f00f45CA8518105fD5DC9",
+  "BeaconAmmV1PairEnumerableERC20": "0x7EA65Fb3D49299308C0D69D81f94129823B8092C",
+  "BeaconAmmV1PairMissingEnumerableERC20": "0xa0717e113275cbe5666299649D36a48625C70108",
+  "BeaconAmmV1PairFactory": "0x5e703991f17Cb8196E7aB682446e7D8a911Bf869",
+  "BeaconAmmV1Router": "0xceA94a45895eCcBc38Cf44faC2148912F3BF0873",
+  "ExponentialCurve": "0x993d49b33A47D7791720C73d4B707FDcD9a8d497",
+  "LinearCurve": "0xc1410471fB65F7152B170a6328031CAbcD5d8BF8",
+  "BeaconAmmV1RoyaltyManager": "0xb1a05b4dceded5e37ab2b2c45b9a3b50f8603448"
+}

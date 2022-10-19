@@ -9,6 +9,7 @@ import {IERC721Mintable} from "../interfaces/IERC721Mintable.sol";
 import {IMintable} from "../interfaces/IMintable.sol";
 import {Test20} from "../../mocks/Test20.sol";
 import {BeaconAmmV1PairFactory} from "../../BeaconAmmV1PairFactory.sol";
+import {BeaconAmmV1RoyaltyManager} from "../../BeaconAmmV1RoyaltyManager.sol";
 import {BeaconAmmV1Pair} from "../../BeaconAmmV1Pair.sol";
 import {BeaconAmmV1PairETH} from "../../BeaconAmmV1PairETH.sol";
 import {BeaconAmmV1PairERC20} from "../../BeaconAmmV1PairERC20.sol";
@@ -39,6 +40,7 @@ abstract contract PairAndFactory is DSTest, ERC721Holder, Configurable, ERC1155H
     uint256 constant protocolFeeMultiplier = 3e15;
     BeaconAmmV1Pair pair;
     TestPairManager pairManager;
+    BeaconAmmV1RoyaltyManager royaltyManager;
 
     function setUp() public {
         bondingCurve = setupCurve();
@@ -55,6 +57,8 @@ abstract contract PairAndFactory is DSTest, ERC721Holder, Configurable, ERC1155H
             feeRecipient,
             protocolFeeMultiplier
         );
+        royaltyManager = new BeaconAmmV1RoyaltyManager(factory);
+        factory.setRoyaltyManager(royaltyManager);
         factory.setBondingCurveAllowed(bondingCurve, true);
         test721.setApprovalForAll(address(factory), true);
         for (uint256 i = 1; i <= numItems; i++) {
@@ -200,32 +204,6 @@ abstract contract PairAndFactory is DSTest, ERC721Holder, Configurable, ERC1155H
         withdrawTokens(pair);
     }
 
-    function testFail_callMint721() public {
-        bytes memory data = abi.encodeWithSelector(
-            Test721.mint.selector,
-            address(this),
-            1000
-        );
-        pair.call(payable(address(test721)), data);
-    }
-
-    function test_callMint721() public {
-        // arbitrary call (just call mint on Test721) works as expected
-
-        // add to whitelist
-        factory.setCallAllowed(payable(address(test721)), true);
-
-        bytes memory data = abi.encodeWithSelector(
-            Test721.mint.selector,
-            address(this),
-            1000
-        );
-        pair.call(payable(address(test721)), data);
-
-        // verify NFT ownership
-        assertEq(test721.ownerOf(1000), address(this));
-    }
-
     function test_withdraw1155() public {
         test1155.mint(address(pair), 1, 2);
         uint256[] memory ids = new uint256[](1);
@@ -275,13 +253,16 @@ abstract contract PairAndFactory is DSTest, ERC721Holder, Configurable, ERC1155H
     }
 
     function testFail_swapForNFTNotInPool() public {
-        (, uint128 newSpotPrice, , uint256 inputAmount, ) = bondingCurve
+        (, uint128 newSpotPrice, , uint256 inputAmount, , , ) = bondingCurve
             .getBuyInfo(
-                spotPrice,
-                delta,
-                numItems + 1,
-                0,
-                protocolFeeMultiplier
+                ICurve.PriceInfoParams({
+                    spotPrice: spotPrice,
+                    delta: delta,
+                    numItems: numItems + 1,
+                    feeMultiplier: 0,
+                    protocolFeeMultiplier: protocolFeeMultiplier,
+                    royaltyFeeMultiplier: 0
+                })
             );
 
         // buy specific NFT not in pool
@@ -298,13 +279,16 @@ abstract contract PairAndFactory is DSTest, ERC721Holder, Configurable, ERC1155H
     }
 
     function testFail_swapForAnyNFTsPastBalance() public {
-        (, uint128 newSpotPrice, , uint256 inputAmount, ) = bondingCurve
+        (, uint128 newSpotPrice, , uint256 inputAmount, , , ) = bondingCurve
             .getBuyInfo(
-                spotPrice,
-                delta,
-                numItems + 1,
-                0,
-                protocolFeeMultiplier
+                ICurve.PriceInfoParams({
+                    spotPrice: spotPrice,
+                    delta: delta,
+                    numItems: numItems + 1,
+                    feeMultiplier: 0,
+                    protocolFeeMultiplier: protocolFeeMultiplier,
+                    royaltyFeeMultiplier: 0
+                })
             );
 
         // buy any NFTs past pool inventory
@@ -341,13 +325,17 @@ abstract contract PairAndFactory is DSTest, ERC721Holder, Configurable, ERC1155H
                 uint128 newSpotPrice,
                 ,
                 uint256 inputAmount,
-                uint256 protocolFee
+                uint256 protocolFee,
+                ,
             ) = bondingCurve.getBuyInfo(
-                    spotPrice,
-                    delta,
-                    numItems,
-                    0,
-                    protocolFeeMultiplier
+                    ICurve.PriceInfoParams({
+                        spotPrice: spotPrice,
+                        delta: delta,
+                        numItems: numItems,
+                        feeMultiplier: 0,
+                        protocolFeeMultiplier: protocolFeeMultiplier,
+                        royaltyFeeMultiplier: 0
+                    })
                 );
             totalProtocolFee += protocolFee;
 
@@ -371,5 +359,11 @@ abstract contract PairAndFactory is DSTest, ERC721Holder, Configurable, ERC1155H
     function test_changeFeeMultiplier() public {
         factory.changeProtocolFeeMultiplier(5e15);
         assertEq(factory.protocolFeeMultiplier(), 5e15);
+    }
+
+    function test_setRoyaltyManager() public {
+        BeaconAmmV1RoyaltyManager newManager = new BeaconAmmV1RoyaltyManager(factory);
+        factory.setRoyaltyManager(newManager);
+        assertEq(address(factory.royaltyManager()), address(newManager));
     }
 }
